@@ -4,17 +4,16 @@ databases:
     user: django
     plan: free
 
-# 2. All services (Redis, Web, Workers)
 services:
-  # 2a. The Redis Instance (for Celery)
-  - type: worker  # <-- FIX 1: Change 'pserv' to 'worker'
+  # Redis as a persistent service
+  - type: pserv
     name: redis-broker
     image:
       url: redis:latest
     plan: free
-    startCommand: "redis-server" # <-- FIX 2: Add the image's start command
+    startCommand: "redis-server"
 
-  # 2b. The Django Web Service (Gunicorn)
+  # Django web service
   - type: web
     name: smartnews-web
     env: python
@@ -27,7 +26,7 @@ services:
           name: postgres-db
           property: connectionString
       - key: REDIS_URL
-        value: redis://redis-broker:6379 # This part is correct
+        value: redis://redis-broker:6379
       - key: SECRET_KEY
         generateValue: true
       - key: NEWS_API_KEY
@@ -35,7 +34,7 @@ services:
       - key: PYTHON_VERSION
         value: 3.13.5
 
-  # 2c. The Celery Worker (Runs the tasks)
+  # Celery worker
   - type: worker
     name: smartnews-worker
     env: python
@@ -59,7 +58,7 @@ services:
       - key: PYTHON_VERSION
         value: 3.13.5
 
-  # 2d. The Celery Beat Scheduler (Triggers the 4-hour task)
+  # Celery Beat Scheduler
   - type: worker
     name: smartnews-beat
     env: python
