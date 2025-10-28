@@ -7,13 +7,13 @@ databases:
 # 2. All services (Redis, Web, Workers)
 services:
   # 2a. The Redis Instance (for Celery)
-  # This is a Private Service, defined by its image.
-  - type: pserv
+  - type: worker  # <-- FIX 1: Change 'pserv' to 'worker'
     name: redis-broker
     image:
       url: redis:latest
     plan: free
-    
+    startCommand: "redis-server" # <-- FIX 2: Add the image's start command
+
   # 2b. The Django Web Service (Gunicorn)
   - type: web
     name: smartnews-web
@@ -27,7 +27,7 @@ services:
           name: postgres-db
           property: connectionString
       - key: REDIS_URL
-        value: redis://redis-broker:6379 # <-- THIS IS THE FIX
+        value: redis://redis-broker:6379 # This part is correct
       - key: SECRET_KEY
         generateValue: true
       - key: NEWS_API_KEY
@@ -48,7 +48,7 @@ services:
           name: postgres-db
           property: connectionString
       - key: REDIS_URL
-        value: redis://redis-broker:6379 # <-- THIS IS THE FIX
+        value: redis://redis-broker:6379
       - key: SECRET_KEY
         fromService:
           type: web
@@ -72,7 +72,7 @@ services:
           name: postgres-db
           property: connectionString
       - key: REDIS_URL
-        value: redis://redis-broker:6379 # <-- THIS IS THE FIX
+        value: redis://redis-broker:6379
       - key: SECRET_KEY
         fromService:
           type: web
@@ -81,5 +81,5 @@ services:
       - key: NEWS_API_KEY
         sync: false
       - key: PYTHON_VERSION
-        value: 3.13.5
-        
+        value: 3.11.9
+
