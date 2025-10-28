@@ -4,16 +4,17 @@ databases:
     user: django
     plan: free
 
-# 2. The Redis Add-on
-# This is the new, correct way to create the Redis instance.
-# It is NOT part of the 'services' list.
-redis:
-  - name: redis-broker
-    plan: free # Free tier
-
-# 3. All other services (web, worker, beat)
+# 2. All services (Redis, Web, Workers)
 services:
-  # 3a. The Django Web Service (Gunicorn)
+  # 2a. The Redis Instance (for Celery)
+  # This is a Private Service, defined by its image.
+  - type: pserv
+    name: redis-broker
+    image:
+      url: redis:latest
+    plan: free
+    
+  # 2b. The Django Web Service (Gunicorn)
   - type: web
     name: smartnews-web
     env: python
@@ -26,9 +27,7 @@ services:
           name: postgres-db
           property: connectionString
       - key: REDIS_URL
-        fromRedis: # <-- THIS IS THE FIX
-          name: redis-broker
-          property: connectionString
+        value: redis://redis-broker:6379 # <-- THIS IS THE FIX
       - key: SECRET_KEY
         generateValue: true
       - key: NEWS_API_KEY
@@ -36,7 +35,7 @@ services:
       - key: PYTHON_VERSION
         value: 3.11.9
 
-  # 3b. The Celery Worker (Runs the tasks)
+  # 2c. The Celery Worker (Runs the tasks)
   - type: worker
     name: smartnews-worker
     env: python
@@ -49,9 +48,7 @@ services:
           name: postgres-db
           property: connectionString
       - key: REDIS_URL
-        fromRedis: # <-- THIS IS THE FIX
-          name: redis-broker
-          property: connectionString
+        value: redis://redis-broker:6379 # <-- THIS IS THE FIX
       - key: SECRET_KEY
         fromService:
           type: web
@@ -62,7 +59,7 @@ services:
       - key: PYTHON_VERSION
         value: 3.11.9
 
-  # 3c. The Celery Beat Scheduler (Triggers the 4-hour task)
+  # 2d. The Celery Beat Scheduler (Triggers the 4-hour task)
   - type: worker
     name: smartnews-beat
     env: python
@@ -75,9 +72,7 @@ services:
           name: postgres-db
           property: connectionString
       - key: REDIS_URL
-        fromRedis: # <-- THIS IS THE FIX
-          name: redis-broker
-          property: connectionString
+        value: redis://redis-broker:6379 # <-- THIS IS THE FIX
       - key: SECRET_KEY
         fromService:
           type: web
@@ -87,4 +82,4 @@ services:
         sync: false
       - key: PYTHON_VERSION
         value: 3.13.5
-
+        
