@@ -11,6 +11,7 @@ services:
   # Redis service
   - type: pserv
     name: redis-broker
+    env: docker
     plan: free
     image:
       url: redis:latest
