@@ -1,0 +1,21 @@
+<!-- templates/partials/article_card.html -->
+<div class="card mb-3 shadow-sm rounded">
+  <div class="row g-0">
+    {% if article.image_url %}
+    <div class="col-md-4">
+      <img src="{{ article.image_url }}" class="img-fluid rounded-start" alt="{{ article.title }}" style="object-fit: cover; height: 100%;">
+    </div>
+    {% endif %}
+    <div class="{% if article.image_url %}col-md-8{% else %}col-md-12{% endif %}">
+      <div class="card-body">
+        <strong class="d-inline-block mb-2 text-primary">{{ article.category.name|default:"General" }}</strong>
+        <h5 class="card-title">{{ article.title }}</h5>
+        <div class="mb-1 text-muted small">
+          {{ article.published_at|date:"M d, Y" }} &bull; {{ article.source.name }} &bull; {{ article.reading_time }} min read
+        </div>
+        <p class="card-text">{{ article.content|truncatewords:30 }}</p>
+        <a href="{% url 'article-detail' article.pk %}" class="stretched-link">Continue reading</a>
+      </div>
+    </div>
+  </div>
+</div>

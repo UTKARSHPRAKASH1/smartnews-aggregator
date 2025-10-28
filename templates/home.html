@@ -1,0 +1,49 @@
+<!-- templates/home.html -->
+{% extends "base.html" %}
+
+{% block title %}Home - Smart News{% endblock %}
+
+{% block content %}
+<div class="p-4 p-md-5 mb-4 rounded text-white bg-dark shadow-sm">
+  <div class="col-md-8 px-0">
+    <h1 class="display-4 fst-italic">Welcome to Smart News</h1>
+    <p class="lead my-3">Your personalized news feed, curated from the world's top sources. Get started by registering and setting your preferences.</p>
+  </div>
+</div>
+
+<div class="row">
+  <div class="col-md-8">
+    <h3 class="pb-3 mb-4 fst-italic border-bottom">
+      {% if user.is_authenticated %}
+        Your Personalized Feed
+      {% else %}
+        Latest News
+      {% endif %}
+    </h3>
+    
+    {% for article in personalized_articles %}
+      {% include "partials/article_card.html" %}
+    {% empty %}
+      <p>No articles found. The background worker might be fetching them!</p>
+    {% endfor %}
+  </div>
+
+  <div class="col-md-4">
+    <div class="position-sticky" style="top: 2rem;">
+      <div class="p-4 mb-3 bg-body-secondary rounded shadow-sm">
+        <h4 class="fst-italic">Trending Now</h4>
+        <ol class="list-unstyled mb-0">
+          {% for article in trending_articles %}
+            <li>
+              <a href="{% url 'article-detail' article.pk %}" class="link-body-emphasis text-decoration-none">
+                {{ article.title }}
+              </a>
+              <span class="text-muted d-block small">{{ article.source.name }} - {{ article.view_count }} views</span>
+            </li>
+          {% endfor %}
+        </ol>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

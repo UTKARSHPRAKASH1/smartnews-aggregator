@@ -1,0 +1,95 @@
+# This is the master "Blueprint" for Render
+services:
+  # 1. The PostgreSQL Database
+  - type: db
+    name: postgres-db
+    databaseName: smartnews
+    dbUser: django
+    plan: free # Free tier
+
+  # 2. The Redis Instance (for Celery)
+  - type: pserv
+    name: redis-broker
+    image: redis
+    plan: free # Free tier
+    
+  # 3. The Django Web Service (Gunicorn)
+  - type: web
+    name: smartnews-web
+    env: python
+    plan: free # Free tier
+    buildCommand: ./build.sh
+    startCommand: "gunicorn smartnews.wsgi:application"
+    envVars:
+      - key: DATABASE_URL
+        fromService:
+          type: db
+          name: postgres-db
+          property: connectionString
+      - key: REDIS_URL
+        fromService:
+          type: pserv
+          name: redis-broker
+          property: connectionString
+      - key: SECRET_KEY
+        generateValue: true # Render will auto-generate a strong secret key
+      - key: NEWS_API_KEY
+        sync: false # Tells Render: "I will add this key manually"
+      - key: PYTHON_VERSION
+        value: 3.11.9 # Match the Python version you used
+
+  # 4. The Celery Worker (Runs the tasks)
+  - type: worker
+    name: smartnews-worker
+    env: python
+    plan: free
+    buildCommand: ./build.sh
+    startCommand: "celery -A smartnews worker --loglevel=info -P gevent"
+    envVars:
+      - key: DATABASE_URL
+        fromService:
+          type: db
+          name: postgres-db
+          property: connectionString
+      - key: REDIS_URL
+        fromService:
+          type: pserv
+          name: redis-broker
+          property: connectionString
+      - key: SECRET_KEY
+        fromService:
+          type: web
+          name: smartnews-web
+          envVarKey: SECRET_KEY
+      - key: NEWS_API_KEY
+        sync: false
+      - key: PYTHON_VERSION
+        value: 3.11.9
+
+  # 5. The Celery Beat Scheduler (Triggers the 4-hour task)
+  - type: worker
+    name: smartnews-beat
+    env: python
+    plan: free
+    buildCommand: ./build.sh
+    startCommand: "celery -A smartnews beat --loglevel=info"
+    envVars:
+      - key: DATABASE_URL
+        fromService:
+          type: db
+          name: postgres-db
+          property: connectionString
+      - key: REDIS_URL
+        fromService:
+          type: pserv
+          name: redis-broker
+          property: connectionString
+      - key: SECRET_KEY
+        fromService:
+          type: web
+          name: smartnews-web
+          envVarKey: SECRET_KEY
+      - key: NEWS_API_KEY
+        sync: false
+      - key: PYTHON_VERSION
+        value: 3.13.5

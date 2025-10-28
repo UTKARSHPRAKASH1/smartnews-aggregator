@@ -1,0 +1,36 @@
+<!-- templates/news/profile.html -->
+{% extends "base.html" %}
+
+{% block title %}Your Profile{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-md-8">
+    <div class="card shadow-sm rounded">
+      <div class="card-body p-5">
+        <h2 class="card-title text-center mb-4">Profile & Preferences</h2>
+        <h5 class="mb-3">Hi, {{ user.username }}!</h5>
+        <p>Select the news categories you're most interested in to personalize your feed.</p>
+        
+        <form method="post">
+          {% csrf_token %}
+          <div class="mb-3">
+            <label class="form-label">Your Preferred Categories:</label>
+            <div class="row">
+              {% for checkbox in form.categories %}
+              <div class="col-md-6">
+                <div class="form-check">
+                  {{ checkbox }}
+                </div>
+              </div>
+              {% endfor %}
+            </div>
+            {{ form.categories.errors }}
+          </div>
+          <button type="submit" class="btn btn-primary rounded-pill px-4">Save Preferences</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

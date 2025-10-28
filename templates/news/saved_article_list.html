@@ -1,0 +1,27 @@
+<!-- templates/news/saved_article_list.html -->
+{% extends "base.html" %}
+
+{% block title %}Saved Articles{% endblock %}
+
+{% block content %}
+<h2 class="pb-3 mb-4 fst-italic border-bottom">Your Saved Articles</h2>
+
+<div class="row">
+  <div class="col-md-12">
+    {% for saved_item in saved_articles %}
+      <!-- We pass the 'article' object to the partial template -->
+      {% with article=saved_item.article %}
+        {% include "partials/article_card.html" %}
+      {% endwith %}
+    {% empty %}
+      <p>You haven't saved any articles yet. Click the "Save" button on an article to read it later.</p>
+    {% endfor %}
+
+    <!-- Pagination -->
+    {% if is_paginated %}
+      <!-- ... (copy pagination block from article_list.html) ... -->
+    {% endif %}
+
+  </div>
+</div>
+{% endblock %}
