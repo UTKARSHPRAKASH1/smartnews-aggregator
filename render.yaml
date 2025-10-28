@@ -1,19 +1,22 @@
 # This is the master "Blueprint" for Render
-services:
-  # 1. The PostgreSQL Database
-  - type: db
-    name: postgres-db
+
+# 1. The PostgreSQL Database
+# This is the corrected top-level block
+databases:
+  - name: postgres-db
     databaseName: smartnews
-    dbUser: django
+    user: django
     plan: free # Free tier
 
-  # 2. The Redis Instance (for Celery)
+# 2. All other services (web, worker, redis)
+services:
+  # 2a. The Redis Instance (for Celery)
   - type: pserv
     name: redis-broker
     image: redis
     plan: free # Free tier
     
-  # 3. The Django Web Service (Gunicorn)
+  # 2b. The Django Web Service (Gunicorn)
   - type: web
     name: smartnews-web
     env: python
@@ -22,8 +25,7 @@ services:
     startCommand: "gunicorn smartnews.wsgi:application"
     envVars:
       - key: DATABASE_URL
-        fromService:
-          type: db
+        fromDatabase: # This is the updated key to find the database
           name: postgres-db
           property: connectionString
       - key: REDIS_URL
@@ -38,7 +40,7 @@ services:
       - key: PYTHON_VERSION
         value: 3.11.9 # Match the Python version you used
 
-  # 4. The Celery Worker (Runs the tasks)
+  # 2c. The Celery Worker (Runs the tasks)
   - type: worker
     name: smartnews-worker
     env: python
@@ -47,8 +49,7 @@ services:
     startCommand: "celery -A smartnews worker --loglevel=info -P gevent"
     envVars:
       - key: DATABASE_URL
-        fromService:
-          type: db
+        fromDatabase: # Updated key
           name: postgres-db
           property: connectionString
       - key: REDIS_URL
@@ -66,7 +67,7 @@ services:
       - key: PYTHON_VERSION
         value: 3.11.9
 
-  # 5. The Celery Beat Scheduler (Triggers the 4-hour task)
+  # 2d. The Celery Beat Scheduler (Triggers the 4-hour task)
   - type: worker
     name: smartnews-beat
     env: python
@@ -75,8 +76,7 @@ services:
     startCommand: "celery -A smartnews beat --loglevel=info"
     envVars:
       - key: DATABASE_URL
-        fromService:
-          type: db
+        fromDatabase: # Updated key
           name: postgres-db
           property: connectionString
       - key: REDIS_URL
