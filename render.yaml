@@ -5,13 +5,10 @@ databases:
     plan: free
 
 services:
-  # Redis as a persistent service
-  - type: pserv
+  # Redis service
+  - type: redis
     name: redis-broker
-    image:
-      url: redis:latest
     plan: free
-    startCommand: "redis-server"
 
   # Django web service
   - type: web
@@ -32,7 +29,7 @@ services:
       - key: NEWS_API_KEY
         sync: false
       - key: PYTHON_VERSION
-        value: 3.13.5
+        value: 3.12.5
 
   # Celery worker
   - type: worker
@@ -56,9 +53,9 @@ services:
       - key: NEWS_API_KEY
         sync: false
       - key: PYTHON_VERSION
-        value: 3.13.5
+        value: 3.12.5
 
-  # Celery Beat Scheduler
+  # Celery Beat
   - type: worker
     name: smartnews-beat
     env: python
@@ -80,4 +77,4 @@ services:
       - key: NEWS_API_KEY
         sync: false
       - key: PYTHON_VERSION
-        value: 3.13.5
+        value: 3.12.5
