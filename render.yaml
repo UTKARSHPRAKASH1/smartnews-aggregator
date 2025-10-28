@@ -8,6 +8,7 @@ databases:
         description: Allow all internal connections
 
 services:
+  # Redis service
   - type: pserv
     name: redis-broker
     env: docker
@@ -15,15 +16,13 @@ services:
     image:
       url: redis:latest
 
+  # Django web service
   - type: web
     name: smartnews-web
     env: python
     plan: free
     buildCommand: ./build.sh
     startCommand: "gunicorn smartnews.wsgi:application"
-    dependsOn:
-      - name: postgres-db
-      - name: redis-broker
     envVars:
       - key: DATABASE_URL
         fromDatabase:
@@ -38,16 +37,13 @@ services:
       - key: PYTHON_VERSION
         value: 3.12.5
 
+  # Celery worker
   - type: worker
     name: smartnews-worker
     env: python
     plan: free
     buildCommand: ./build.sh
     startCommand: "celery -A smartnews worker --loglevel=info -P gevent"
-    dependsOn:
-      - name: smartnews-web
-      - name: postgres-db
-      - name: redis-broker
     envVars:
       - key: DATABASE_URL
         fromDatabase:
@@ -62,16 +58,13 @@ services:
       - key: PYTHON_VERSION
         value: 3.12.5
 
+  # Celery Beat
   - type: worker
     name: smartnews-beat
     env: python
     plan: free
     buildCommand: ./build.sh
     startCommand: "celery -A smartnews beat --loglevel=info"
-    dependsOn:
-      - name: smartnews-web
-      - name: postgres-db
-      - name: redis-broker
     envVars:
       - key: DATABASE_URL
         fromDatabase:
