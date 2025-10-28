@@ -1,47 +1,42 @@
-# This is the master "Blueprint" for Render
-
-# 1. The PostgreSQL Database
-# This is the corrected top-level block
 databases:
   - name: postgres-db
     databaseName: smartnews
     user: django
+    plan: free
+
+# 2. The Redis Add-on
+# This is the new, correct way to create the Redis instance.
+# It is NOT part of the 'services' list.
+redis:
+  - name: redis-broker
     plan: free # Free tier
 
-# 2. All other services (web, worker, redis)
+# 3. All other services (web, worker, beat)
 services:
-  # 2a. The Redis Instance (for Celery)
-  - type: pserv
-    name: redis-broker
-    image:
-      url: redis:latest
-    plan: free # Free tier
-    
-  # 2b. The Django Web Service (Gunicorn)
+  # 3a. The Django Web Service (Gunicorn)
   - type: web
     name: smartnews-web
     env: python
-    plan: free # Free tier
+    plan: free
     buildCommand: ./build.sh
     startCommand: "gunicorn smartnews.wsgi:application"
     envVars:
       - key: DATABASE_URL
-        fromDatabase: # This is the updated key to find the database
+        fromDatabase:
           name: postgres-db
           property: connectionString
       - key: REDIS_URL
-        fromService:
-          type: pserv
+        fromRedis: # <-- THIS IS THE FIX
           name: redis-broker
           property: connectionString
       - key: SECRET_KEY
-        generateValue: true # Render will auto-generate a strong secret key
+        generateValue: true
       - key: NEWS_API_KEY
-        sync: false # Tells Render: "I will add this key manually"
+        sync: false
       - key: PYTHON_VERSION
-        value: 3.11.9 # Match the Python version you used
+        value: 3.11.9
 
-  # 2c. The Celery Worker (Runs the tasks)
+  # 3b. The Celery Worker (Runs the tasks)
   - type: worker
     name: smartnews-worker
     env: python
@@ -50,12 +45,11 @@ services:
     startCommand: "celery -A smartnews worker --loglevel=info -P gevent"
     envVars:
       - key: DATABASE_URL
-        fromDatabase: # Updated key
+        fromDatabase:
           name: postgres-db
           property: connectionString
       - key: REDIS_URL
-        fromService:
-          type: pserv
+        fromRedis: # <-- THIS IS THE FIX
           name: redis-broker
           property: connectionString
       - key: SECRET_KEY
@@ -68,7 +62,7 @@ services:
       - key: PYTHON_VERSION
         value: 3.11.9
 
-  # 2d. The Celery Beat Scheduler (Triggers the 4-hour task)
+  # 3c. The Celery Beat Scheduler (Triggers the 4-hour task)
   - type: worker
     name: smartnews-beat
     env: python
@@ -77,12 +71,11 @@ services:
     startCommand: "celery -A smartnews beat --loglevel=info"
     envVars:
       - key: DATABASE_URL
-        fromDatabase: # Updated key
+        fromDatabase:
           name: postgres-db
           property: connectionString
       - key: REDIS_URL
-        fromService:
-          type: pserv
+        fromRedis: # <-- THIS IS THE FIX
           name: redis-broker
           property: connectionString
       - key: SECRET_KEY
@@ -94,3 +87,4 @@ services:
         sync: false
       - key: PYTHON_VERSION
         value: 3.13.5
+
