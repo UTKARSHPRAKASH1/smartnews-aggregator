@@ -3,6 +3,10 @@ databases:
     databaseName: smartnews
     user: django
     plan: free
+    ipAllowList:
+      - source: 0.0.0.0/0
+        description: Allow all internal connections
+
 
 services:
   # Redis service
