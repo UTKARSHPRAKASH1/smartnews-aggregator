@@ -7,12 +7,18 @@ databases:
       - source: 0.0.0.0/0
         description: Allow all internal connections
 
-
 services:
   # Redis service
-  - type: redis
+  - type: pserv
     name: redis-broker
+    env: docker
     plan: free
+    image:
+      url: redis:latest
+    startCommand: "redis-server"
+    ipAllowList:
+      - source: 0.0.0.0/0
+        description: Allow all connections
 
   # Django web service
   - type: web
