@@ -1,80 +1,89 @@
-databases:
-  - name: postgres-db
-    databaseName: smartnews
-    user: django
-    plan: free
-    ipAllowList:
-      - source: 0.0.0.0/0
-        description: Allow all internal connections
-
 services:
-  # Redis service
+  - type: db
+    name: postgres-db
+    databaseName: smartnews
+    dbUser: django
+    plan: free
+
   - type: pserv
     name: redis-broker
-    env: docker
+    image: redis
     plan: free
-    image:
-      url: redis:latest
 
-  # Django web service
   - type: web
     name: smartnews-web
     env: python
     plan: free
-    buildCommand: ./build.sh
-    startCommand: "gunicorn smartnews.wsgi:application"
+    buildCommand: .build.sh
+    startCommand: gunicorn smartnews.wsgi:application
     envVars:
       - key: DATABASE_URL
-        fromDatabase:
+        fromService:
+          type: db
           name: postgres-db
           property: connectionString
       - key: REDIS_URL
-        value: redis://redis-broker:6379
+        fromService:
+          type: pserv
+          name: redis-broker
+          property: connectionString
       - key: SECRET_KEY
         generateValue: true
-      - key: NEWS_API_KEY
-        sync: false
+      - key: NEWSAPI_KEY
+        sync: false   # You must add this manually in Render dashboard
       - key: PYTHON_VERSION
-        value: 3.12.5
+        value: 3.11.9   # Match your Python version
 
-  # Celery worker
   - type: worker
     name: smartnews-worker
     env: python
     plan: free
-    buildCommand: ./build.sh
-    startCommand: "celery -A smartnews worker --loglevel=info -P gevent"
+    buildCommand: .build.sh
+    startCommand: celery -A smartnews worker --loglevel=info -P gevent
     envVars:
       - key: DATABASE_URL
-        fromDatabase:
+        fromService:
+          type: db
           name: postgres-db
           property: connectionString
       - key: REDIS_URL
-        value: redis://redis-broker:6379
+        fromService:
+          type: pserv
+          name: redis-broker
+          property: connectionString
       - key: SECRET_KEY
-        generateValue: true
-      - key: NEWS_API_KEY
+        fromService:
+          type: web
+          name: smartnews-web
+          envVarKey: SECRET_KEY
+      - key: NEWSAPI_KEY
         sync: false
       - key: PYTHON_VERSION
-        value: 3.12.5
+        value: 3.11.9
 
-  # Celery Beat
   - type: worker
     name: smartnews-beat
     env: python
     plan: free
-    buildCommand: ./build.sh
-    startCommand: "celery -A smartnews beat --loglevel=info"
+    buildCommand: .build.sh
+    startCommand: celery -A smartnews beat --loglevel=info
     envVars:
       - key: DATABASE_URL
-        fromDatabase:
+        fromService:
+          type: db
           name: postgres-db
           property: connectionString
       - key: REDIS_URL
-        value: redis://redis-broker:6379
+        fromService:
+          type: pserv
+          name: redis-broker
+          property: connectionString
       - key: SECRET_KEY
-        generateValue: true
-      - key: NEWS_API_KEY
+        fromService:
+          type: web
+          name: smartnews-web
+          envVarKey: SECRET_KEY
+      - key: NEWSAPI_KEY
         sync: false
       - key: PYTHON_VERSION
-        value: 3.12.5
+        value: 3.11.9
