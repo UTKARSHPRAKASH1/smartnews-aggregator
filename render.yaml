@@ -13,7 +13,8 @@ services:
   # 2a. The Redis Instance (for Celery)
   - type: pserv
     name: redis-broker
-    image: redis
+    image:
+      url: redis:latest
     plan: free # Free tier
     
   # 2b. The Django Web Service (Gunicorn)
